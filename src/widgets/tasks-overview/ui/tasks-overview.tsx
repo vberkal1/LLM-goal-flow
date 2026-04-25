@@ -3,14 +3,8 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
-import {
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Card, CardContent, Chip, Divider, Stack, Typography } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import { useAppStore } from 'app/store/store';
 import type { Goal } from 'entities/goal';
 import type { TaskStatus } from 'entities/task';
@@ -19,24 +13,49 @@ type TasksOverviewProps = {
   activeGoal: Goal | null;
 };
 
-const statusConfig: Record<
-  TaskStatus,
-  { label: string; icon: ReactElement; color: 'default' | 'primary' | 'success' }
-> = {
+type StatusBadgeConfig = {
+  label: string;
+  icon: ReactElement;
+  background: string;
+  color: string;
+};
+
+const StatusBadge = styled('span')<{ badgeColor: string; badgeBackground: string }>(
+  ({ badgeColor, badgeBackground, theme }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: theme.spacing(0.75),
+    width: 'fit-content',
+    borderRadius: 999,
+    padding: theme.spacing(0.5, 1),
+    backgroundColor: badgeBackground,
+    color: badgeColor,
+    fontSize: 12,
+    fontWeight: 700,
+    lineHeight: 1,
+    letterSpacing: 0.2,
+    textTransform: 'uppercase',
+  }),
+);
+
+const statusConfig: Record<TaskStatus, StatusBadgeConfig> = {
   todo: {
     label: 'To do',
-    icon: <RadioButtonUncheckedRoundedIcon fontSize="small" />,
-    color: 'default',
+    icon: <RadioButtonUncheckedRoundedIcon sx={{ fontSize: 14 }} />,
+    background: '#eef2f7',
+    color: '#526075',
   },
   'in-progress': {
     label: 'In progress',
-    icon: <TrendingUpRoundedIcon fontSize="small" />,
-    color: 'primary',
+    icon: <TrendingUpRoundedIcon sx={{ fontSize: 14 }} />,
+    background: '#e8efff',
+    color: '#2457f5',
   },
   done: {
     label: 'Done',
-    icon: <CheckCircleRoundedIcon fontSize="small" />,
-    color: 'success',
+    icon: <CheckCircleRoundedIcon sx={{ fontSize: 14 }} />,
+    background: '#e7f7ef',
+    color: '#127a4a',
   },
 };
 
@@ -64,29 +83,34 @@ export function TasksOverview({ activeGoal }: TasksOverviewProps) {
             </Typography>
           </div>
           <Stack divider={<Divider flexItem />} spacing={2}>
-            {tasks.map((task) => (
-              <Stack
-                key={task.id}
-                direction={{ xs: 'column', sm: 'row' }}
-                justifyContent="space-between"
-                spacing={2}
-              >
-                <Stack spacing={1}>
-                  <Typography variant="subtitle1">{task.title}</Typography>
+            {tasks.map((task) => {
+              const status = statusConfig[task.status];
+
+              return (
+                <Stack
+                  key={task.id}
+                  direction={{ xs: 'column', sm: 'row' }}
+                  justifyContent="space-between"
+                  spacing={2}
+                >
+                  <Stack spacing={1}>
+                    <Typography variant="subtitle1">{task.title}</Typography>
+                    <StatusBadge
+                      badgeBackground={status.background}
+                      badgeColor={status.color}
+                    >
+                      {status.icon}
+                      <span>{status.label}</span>
+                    </StatusBadge>
+                  </Stack>
                   <Chip
-                    icon={statusConfig[task.status].icon}
-                    label={statusConfig[task.status].label}
-                    color={statusConfig[task.status].color}
-                    variant={task.status === 'todo' ? 'outlined' : 'filled'}
+                    icon={<AccessTimeRoundedIcon fontSize="small" />}
+                    label={formatMinutes(task.timeSpent)}
+                    variant="outlined"
                   />
                 </Stack>
-                <Chip
-                  icon={<AccessTimeRoundedIcon fontSize="small" />}
-                  label={formatMinutes(task.timeSpent)}
-                  variant="outlined"
-                />
-              </Stack>
-            ))}
+              );
+            })}
           </Stack>
         </Stack>
       </CardContent>
