@@ -34,6 +34,44 @@ describe('app store', () => {
     expect(state.tasks.every((task) => task.goalId !== 'goal-1')).toBe(true);
   });
 
+  it('adds a task to the active goal', () => {
+    useAppStore.getState().addTask({
+      title: 'Новая задача',
+      status: 'todo',
+      priority: 'medium',
+    });
+
+    const state = useAppStore.getState();
+
+    expect(state.tasks[0]).toMatchObject({
+      id: 'task-test-id',
+      goalId: 'goal-1',
+      title: 'Новая задача',
+      status: 'todo',
+      priority: 'medium',
+    });
+  });
+
+  it('updates a task fields', () => {
+    useAppStore.getState().updateTask('task-1', {
+      title: 'Обновленная задача',
+      status: 'in-progress',
+      priority: 'low',
+    });
+
+    expect(useAppStore.getState().tasks.find((task) => task.id === 'task-1')).toMatchObject({
+      title: 'Обновленная задача',
+      status: 'in-progress',
+      priority: 'low',
+    });
+  });
+
+  it('removes a task', () => {
+    useAppStore.getState().removeTask('task-1');
+
+    expect(useAppStore.getState().tasks.some((task) => task.id === 'task-1')).toBe(false);
+  });
+
   it('resets store to the initial state', () => {
     useAppStore.getState().addGoal('Временная цель');
 

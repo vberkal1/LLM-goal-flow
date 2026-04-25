@@ -2,8 +2,8 @@ import { Box, Grid, Stack, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useAppStore } from 'app/store/store';
 import { ManageGoalPanel } from 'features/manage-goal';
+import { ManageTaskList } from 'features/manage-task';
 import { OverviewStats } from 'widgets/overview-stats';
-import { TasksOverview } from 'widgets/tasks-overview';
 
 const Shell = styled(Box)(({ theme }) => ({
   minHeight: '100vh',
@@ -30,7 +30,7 @@ export function AppShell() {
         </Typography>
         <Typography variant="h4">Dashboard</Typography>
         <Typography color="text.secondary">
-          Milestone 2: CRUD для целей и выбор активной области фокуса.
+          Milestone 3: CRUD задач и list view для активной цели.
         </Typography>
       </Header>
       <Grid container spacing={3}>
@@ -40,7 +40,7 @@ export function AppShell() {
         <Grid size={{ xs: 12, md: 8, lg: 9 }}>
           <Stack spacing={3}>
             <OverviewStats activeGoalId={activeGoal?.id ?? null} />
-            <TasksOverview activeGoal={activeGoal} />
+            <ManageTaskList activeGoal={activeGoal} />
           </Stack>
         </Grid>
       </Grid>

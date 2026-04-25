@@ -15,8 +15,8 @@ function getProgress(doneTasks: number, totalTasks: number) {
 }
 
 export function OverviewStats({ activeGoalId }: OverviewStatsProps) {
-  const getTasksByGoalId = useAppStore((state) => state.getTasksByGoalId);
-  const tasks = getTasksByGoalId(activeGoalId);
+  const allTasks = useAppStore((state) => state.tasks);
+  const tasks = allTasks.filter((task) => !activeGoalId || task.goalId === activeGoalId);
   const doneTasks = tasks.filter((task) => task.status === 'done').length;
   const totalMinutes = tasks.reduce((sum, task) => sum + task.timeSpent, 0);
 

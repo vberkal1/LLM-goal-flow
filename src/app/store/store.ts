@@ -11,8 +11,17 @@ type GoalSlice = {
   removeGoal: (goalId: string) => void;
 };
 
+type TaskInput = {
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+};
+
 type TaskSlice = {
   tasks: Task[];
+  addTask: (input: TaskInput) => void;
+  updateTask: (taskId: string, input: TaskInput) => void;
+  removeTask: (taskId: string) => void;
   getTasksByGoalId: (goalId: string | null) => Task[];
 };
 
@@ -76,6 +85,20 @@ function createInitialTasks(): Task[] {
   ];
 }
 
+function sanitizeTaskInput(input: TaskInput) {
+  const title = input.title.trim();
+
+  if (!title) {
+    return null;
+  }
+
+  return {
+    title,
+    status: input.status,
+    priority: input.priority,
+  };
+}
+
 export function createAppStoreState(): AppStore {
   const goals = createInitialGoals();
   const tasks = createInitialTasks();
@@ -133,6 +156,57 @@ export function createAppStoreState(): AppStore {
       });
     },
     tasks,
+    addTask: (input) => {
+      const nextTask = sanitizeTaskInput(input);
+      const goalId = useAppStore.getState().activeGoalId;
+
+      if (!nextTask || !goalId) {
+        return;
+      }
+
+      const timestamp = createTimestamp();
+      const task: Task = {
+        id: createId('task'),
+        goalId,
+        title: nextTask.title,
+        status: nextTask.status,
+        priority: nextTask.priority,
+        tags: [],
+        timeSpent: 0,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+
+      useAppStore.setState((state) => ({
+        tasks: [task, ...state.tasks],
+      }));
+    },
+    updateTask: (taskId, input) => {
+      const nextTask = sanitizeTaskInput(input);
+
+      if (!nextTask) {
+        return;
+      }
+
+      useAppStore.setState((state) => ({
+        tasks: state.tasks.map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                title: nextTask.title,
+                status: nextTask.status,
+                priority: nextTask.priority,
+                updatedAt: createTimestamp(),
+              }
+            : task,
+        ),
+      }));
+    },
+    removeTask: (taskId) => {
+      useAppStore.setState((state) => ({
+        tasks: state.tasks.filter((task) => task.id !== taskId),
+      }));
+    },
     getTasksByGoalId: (goalId) =>
       useAppStore.getState().tasks.filter((task) => !goalId || task.goalId === goalId),
     viewMode: 'list',
