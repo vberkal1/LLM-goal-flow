@@ -30,97 +30,117 @@ function createTimestamp() {
   return new Date().toISOString();
 }
 
-const createTask = (
+function createTask(
   id: string,
   goalId: string,
   title: string,
   status: TaskStatus,
   priority: TaskPriority,
   timeSpent: number,
-): Task => ({
-  id,
-  goalId,
-  title,
-  status,
-  priority,
-  tags: [],
-  timeSpent,
-  createdAt: '2026-04-25T10:00:00.000Z',
-  updatedAt: '2026-04-25T10:00:00.000Z',
-});
+): Task {
+  return {
+    id,
+    goalId,
+    title,
+    status,
+    priority,
+    tags: [],
+    timeSpent,
+    createdAt: '2026-04-25T10:00:00.000Z',
+    updatedAt: '2026-04-25T10:00:00.000Z',
+  };
+}
 
-const initialGoals: Goal[] = [
-  {
-    id: 'goal-1',
-    title: 'Запустить MVP GoalFlow',
-    createdAt: '2026-04-25T09:00:00.000Z',
-    updatedAt: '2026-04-25T09:00:00.000Z',
-  },
-  {
-    id: 'goal-2',
-    title: 'Стабилизировать рабочий процесс',
-    createdAt: '2026-04-25T09:30:00.000Z',
-    updatedAt: '2026-04-25T09:30:00.000Z',
-  },
-];
+function createInitialGoals(): Goal[] {
+  return [
+    {
+      id: 'goal-1',
+      title: 'Запустить MVP GoalFlow',
+      createdAt: '2026-04-25T09:00:00.000Z',
+      updatedAt: '2026-04-25T09:00:00.000Z',
+    },
+    {
+      id: 'goal-2',
+      title: 'Стабилизировать рабочий процесс',
+      createdAt: '2026-04-25T09:30:00.000Z',
+      updatedAt: '2026-04-25T09:30:00.000Z',
+    },
+  ];
+}
 
-const initialTasks: Task[] = [
-  createTask('task-1', 'goal-1', 'Собрать базовую структуру проекта', 'done', 'high', 90),
-  createTask('task-2', 'goal-1', 'Подготовить store и layout dashboard', 'in-progress', 'high', 35),
-  createTask('task-3', 'goal-2', 'Определить ежедневный ритм работы', 'todo', 'medium', 0),
-];
+function createInitialTasks(): Task[] {
+  return [
+    createTask('task-1', 'goal-1', 'Собрать базовую структуру проекта', 'done', 'high', 90),
+    createTask('task-2', 'goal-1', 'Подготовить store и layout dashboard', 'in-progress', 'high', 35),
+    createTask('task-3', 'goal-2', 'Определить ежедневный ритм работы', 'todo', 'medium', 0),
+  ];
+}
 
-export const useAppStore = create<AppStore>((set, get) => ({
-  goals: initialGoals,
-  activeGoalId: initialGoals[0]?.id ?? null,
-  addGoal: (title) => {
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) {
-      return;
-    }
+export function createAppStoreState(): AppStore {
+  const goals = createInitialGoals();
+  const tasks = createInitialTasks();
 
-    const timestamp = createTimestamp();
-    const goal: Goal = {
-      id: createId('goal'),
-      title: trimmedTitle,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
+  return {
+    goals,
+    activeGoalId: goals[0]?.id ?? null,
+    addGoal: (title) => {
+      const trimmedTitle = title.trim();
+      if (!trimmedTitle) {
+        return;
+      }
 
-    set((state) => ({
-      goals: [goal, ...state.goals],
-      activeGoalId: goal.id,
-    }));
-  },
-  setActiveGoal: (goalId) => set({ activeGoalId: goalId }),
-  updateGoal: (goalId, title) => {
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) {
-      return;
-    }
-
-    set((state) => ({
-      goals: state.goals.map((goal) =>
-        goal.id === goalId
-          ? { ...goal, title: trimmedTitle, updatedAt: createTimestamp() }
-          : goal,
-      ),
-    }));
-  },
-  removeGoal: (goalId) =>
-    set((state) => {
-      const goals = state.goals.filter((goal) => goal.id !== goalId);
-      const activeGoalId =
-        state.activeGoalId === goalId ? goals[0]?.id ?? null : state.activeGoalId;
-
-      return {
-        goals,
-        activeGoalId,
-        tasks: state.tasks.filter((task) => task.goalId !== goalId),
+      const timestamp = createTimestamp();
+      const goal: Goal = {
+        id: createId('goal'),
+        title: trimmedTitle,
+        createdAt: timestamp,
+        updatedAt: timestamp,
       };
-    }),
-  tasks: initialTasks,
-  getTasksByGoalId: (goalId) =>
-    get().tasks.filter((task) => !goalId || task.goalId === goalId),
-  viewMode: 'list',
-}));
+
+      useAppStore.setState((state) => ({
+        goals: [goal, ...state.goals],
+        activeGoalId: goal.id,
+      }));
+    },
+    setActiveGoal: (goalId) => {
+      useAppStore.setState({ activeGoalId: goalId });
+    },
+    updateGoal: (goalId, title) => {
+      const trimmedTitle = title.trim();
+      if (!trimmedTitle) {
+        return;
+      }
+
+      useAppStore.setState((state) => ({
+        goals: state.goals.map((goal) =>
+          goal.id === goalId
+            ? { ...goal, title: trimmedTitle, updatedAt: createTimestamp() }
+            : goal,
+        ),
+      }));
+    },
+    removeGoal: (goalId) => {
+      useAppStore.setState((state) => {
+        const nextGoals = state.goals.filter((goal) => goal.id !== goalId);
+        const nextActiveGoalId =
+          state.activeGoalId === goalId ? nextGoals[0]?.id ?? null : state.activeGoalId;
+
+        return {
+          goals: nextGoals,
+          activeGoalId: nextActiveGoalId,
+          tasks: state.tasks.filter((task) => task.goalId !== goalId),
+        };
+      });
+    },
+    tasks,
+    getTasksByGoalId: (goalId) =>
+      useAppStore.getState().tasks.filter((task) => !goalId || task.goalId === goalId),
+    viewMode: 'list',
+  };
+}
+
+export const useAppStore = create<AppStore>(() => createAppStoreState());
+
+export function resetAppStore() {
+  useAppStore.setState(createAppStoreState(), true);
+}

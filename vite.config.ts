@@ -15,6 +15,12 @@ export default defineConfig({
       features: path.resolve(rootDir, 'src/features'),
       entities: path.resolve(rootDir, 'src/entities'),
       shared: path.resolve(rootDir, 'src/shared'),
+      test: path.resolve(rootDir, 'src/test'),
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/test/setup.ts',
   },
 });

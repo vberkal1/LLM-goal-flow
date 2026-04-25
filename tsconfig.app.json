@@ -12,6 +12,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "strict": true,
+    "types": ["vitest/globals", "@testing-library/jest-dom"],
     "noFallthroughCasesInSwitch": true,
     "baseUrl": "./src",
     "paths": {
@@ -20,7 +21,8 @@
       "widgets/*": ["widgets/*"],
       "features/*": ["features/*"],
       "entities/*": ["entities/*"],
-      "shared/*": ["shared/*"]
+      "shared/*": ["shared/*"],
+      "test/*": ["test/*"]
     }
   },
   "include": ["src"]
