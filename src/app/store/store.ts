@@ -5,7 +5,10 @@ import type { Task, TaskPriority, TaskStatus } from 'entities/task';
 type GoalSlice = {
   goals: Goal[];
   activeGoalId: string | null;
+  addGoal: (title: string) => void;
   setActiveGoal: (goalId: string) => void;
+  updateGoal: (goalId: string, title: string) => void;
+  removeGoal: (goalId: string) => void;
 };
 
 type TaskSlice = {
@@ -18,6 +21,14 @@ type UiSlice = {
 };
 
 export type AppStore = GoalSlice & TaskSlice & UiSlice;
+
+function createId(prefix: string) {
+  return `${prefix}-${crypto.randomUUID()}`;
+}
+
+function createTimestamp() {
+  return new Date().toISOString();
+}
 
 const createTask = (
   id: string,
@@ -62,7 +73,52 @@ const initialTasks: Task[] = [
 export const useAppStore = create<AppStore>((set, get) => ({
   goals: initialGoals,
   activeGoalId: initialGoals[0]?.id ?? null,
+  addGoal: (title) => {
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      return;
+    }
+
+    const timestamp = createTimestamp();
+    const goal: Goal = {
+      id: createId('goal'),
+      title: trimmedTitle,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    set((state) => ({
+      goals: [goal, ...state.goals],
+      activeGoalId: goal.id,
+    }));
+  },
   setActiveGoal: (goalId) => set({ activeGoalId: goalId }),
+  updateGoal: (goalId, title) => {
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      return;
+    }
+
+    set((state) => ({
+      goals: state.goals.map((goal) =>
+        goal.id === goalId
+          ? { ...goal, title: trimmedTitle, updatedAt: createTimestamp() }
+          : goal,
+      ),
+    }));
+  },
+  removeGoal: (goalId) =>
+    set((state) => {
+      const goals = state.goals.filter((goal) => goal.id !== goalId);
+      const activeGoalId =
+        state.activeGoalId === goalId ? goals[0]?.id ?? null : state.activeGoalId;
+
+      return {
+        goals,
+        activeGoalId,
+        tasks: state.tasks.filter((task) => task.goalId !== goalId),
+      };
+    }),
   tasks: initialTasks,
   getTasksByGoalId: (goalId) =>
     get().tasks.filter((task) => !goalId || task.goalId === goalId),
