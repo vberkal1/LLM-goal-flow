@@ -1,55 +1,16 @@
-import type { ReactElement } from 'react';
 import { useState } from 'react';
-import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
-import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded';
-import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Button, Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useAppStore } from 'app/store/store';
 import type { Goal } from 'entities/goal';
-import type { Task, TaskPriority, TaskStatus } from 'entities/task';
+import { createEditState, defaultTaskState, getDialogTitle } from '../model/task-dialog-state';
+import type { TaskDialogState } from '../model/types';
+import { TaskListItem } from './task-list-item';
 import { TaskDialog } from './task-dialog';
 
 type ManageTaskListProps = {
   activeGoal: Goal | null;
-};
-
-type TaskDialogState = {
-  mode: 'create' | 'edit';
-  taskId: string | null;
-  title: string;
-  status: TaskStatus;
-  priority: TaskPriority;
-};
-
-type StatusBadgeConfig = {
-  label: string;
-  icon: ReactElement;
-  background: string;
-  color: string;
-};
-
-const defaultTaskState: TaskDialogState = {
-  mode: 'create',
-  taskId: null,
-  title: '',
-  status: 'todo',
-  priority: 'medium',
 };
 
 const Header = styled(Stack)(({ theme }) => ({
@@ -66,75 +27,16 @@ const AddButton = styled(Button)({
   flexShrink: 0,
 });
 
-const StatusBadge = styled('span')<{ badgeColor: string; badgeBackground: string }>(
-  ({ badgeColor, badgeBackground, theme }) => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: theme.spacing(0.75),
-    width: 'fit-content',
-    borderRadius: 999,
-    padding: theme.spacing(0.5, 1),
-    backgroundColor: badgeBackground,
-    color: badgeColor,
-    fontSize: 12,
-    fontWeight: 700,
-    lineHeight: 1,
-    letterSpacing: 0.2,
-    textTransform: 'uppercase',
-  }),
-);
-
-const TaskActions = styled(Box)({
-  display: 'flex',
-  flexShrink: 0,
-});
-
-const priorityColorMap: Record<TaskPriority, 'default' | 'warning' | 'error'> = {
-  low: 'default',
-  medium: 'warning',
-  high: 'error',
-};
-
-const statusConfig: Record<TaskStatus, StatusBadgeConfig> = {
-  todo: {
-    label: 'To do',
-    icon: <RadioButtonUncheckedRoundedIcon sx={{ fontSize: 14 }} />,
-    background: '#eef2f7',
-    color: '#526075',
-  },
-  'in-progress': {
-    label: 'In progress',
-    icon: <TrendingUpRoundedIcon sx={{ fontSize: 14 }} />,
-    background: '#e8efff',
-    color: '#2457f5',
-  },
-  done: {
-    label: 'Done',
-    icon: <CheckCircleRoundedIcon sx={{ fontSize: 14 }} />,
-    background: '#e7f7ef',
-    color: '#127a4a',
-  },
-};
-
-function formatMinutes(value: number) {
-  const hours = Math.floor(value / 60);
-  const minutes = value % 60;
-
-  return hours > 0 ? `${hours}ч ${minutes}м` : `${minutes}м`;
+function getTaskDescription(activeGoal: Goal | null) {
+  return activeGoal
+    ? 'CRUD задач в рамках выбранной цели.'
+    : 'Выберите цель, чтобы управлять задачами.';
 }
 
-function createEditState(task: Task): TaskDialogState {
-  return {
-    mode: 'edit',
-    taskId: task.id,
-    title: task.title,
-    status: task.status,
-    priority: task.priority,
-  };
-}
-
-function getDialogTitle(mode: 'create' | 'edit') {
-  return mode === 'create' ? 'Новая задача' : 'Редактировать задачу';
+function getEmptyState(activeGoal: Goal | null) {
+  return activeGoal
+    ? 'Для этой цели пока нет задач. Добавьте первую задачу, чтобы начать работу.'
+    : 'Нет активной цели. Сначала выберите или создайте цель.';
 }
 
 export function ManageTaskList({ activeGoal }: ManageTaskListProps) {
@@ -156,7 +58,12 @@ export function ManageTaskList({ activeGoal }: ManageTaskListProps) {
     setDialogOpen(true);
   };
 
-  const openEditDialog = (task: Task) => {
+  const openEditDialog = (taskId: string) => {
+    const task = tasks.find((item) => item.id === taskId);
+    if (!task) {
+      return;
+    }
+
     setDialogState(createEditState(task));
     setDialogOpen(true);
   };
@@ -183,9 +90,7 @@ export function ManageTaskList({ activeGoal }: ManageTaskListProps) {
                 <Typography variant="h6">
                   {activeGoal ? activeGoal.title : 'Нет активной цели'}
                 </Typography>
-                <Typography color="text.secondary">
-                  CRUD задач в рамках выбранной цели.
-                </Typography>
+                <Typography color="text.secondary">{getTaskDescription(activeGoal)}</Typography>
               </div>
               <AddButton
                 variant="contained"
@@ -197,73 +102,17 @@ export function ManageTaskList({ activeGoal }: ManageTaskListProps) {
               </AddButton>
             </Header>
             {tasks.length === 0 ? (
-              <Typography color="text.secondary">
-                Для этой цели пока нет задач. Добавьте первую задачу, чтобы начать работу.
-              </Typography>
+              <Typography color="text.secondary">{getEmptyState(activeGoal)}</Typography>
             ) : (
               <Stack divider={<Divider flexItem />} spacing={2}>
-                {tasks.map((task) => {
-                  const status = statusConfig[task.status];
-
-                  return (
-                    <Stack
-                      key={task.id}
-                      direction={{ xs: 'column', md: 'row' }}
-                      justifyContent="space-between"
-                      spacing={2}
-                    >
-                      <Stack spacing={1}>
-                        <Typography variant="subtitle1">{task.title}</Typography>
-                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                          <StatusBadge
-                            badgeBackground={status.background}
-                            badgeColor={status.color}
-                          >
-                            {status.icon}
-                            <span>{status.label}</span>
-                          </StatusBadge>
-                          <Chip
-                            label={task.priority}
-                            color={priorityColorMap[task.priority]}
-                            size="small"
-                            variant="outlined"
-                          />
-                        </Stack>
-                      </Stack>
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        alignItems="center"
-                        justifyContent="space-between"
-                      >
-                        <Chip
-                          icon={<AccessTimeRoundedIcon fontSize="small" />}
-                          label={formatMinutes(task.timeSpent)}
-                          size="small"
-                          variant="outlined"
-                        />
-                        <TaskActions>
-                          <Tooltip title="Редактировать">
-                            <IconButton
-                              onClick={() => openEditDialog(task)}
-                              aria-label="Редактировать"
-                            >
-                              <EditRoundedIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Удалить">
-                            <IconButton
-                              onClick={() => removeTask(task.id)}
-                              aria-label="Удалить"
-                            >
-                              <DeleteOutlineRoundedIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </TaskActions>
-                      </Stack>
-                    </Stack>
-                  );
-                })}
+                {tasks.map((task) => (
+                  <TaskListItem
+                    key={task.id}
+                    task={task}
+                    onEdit={(item) => openEditDialog(item.id)}
+                    onRemove={removeTask}
+                  />
+                ))}
               </Stack>
             )}
           </Stack>
